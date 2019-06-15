@@ -2,39 +2,38 @@
 from __future__ import print_function
 
 import json
+import pynmea2
+import serial
 import subprocess
 import time
 
 from OmegaExpansion import oledExp
 
 oledExp.driverInit()
+oledExp.clear()
 
-while (1):
-    s = subprocess.Popen("ubus call gps info", shell=True, stdout=subprocess.PIPE).stdout.read()
-    d = json.loads(s)
+port = "/dev/ttyACM0"
+ 
+def parseGPS(str):
+    if str.find('GGA') > 0:
+        msg = pynmea2.parse(str)
+	latstr = ' LAT: {} {}'.format(msg.lat, msg.lat_dir)
+        lonstr = ' LON: {} {}'.format(msg.lon, msg.lon_dir)        
+        satstr = '#SAT: {}'.format(msg.num_sats)
+        timestr = 'TIME: {}'.format(msg.timestamp)
+	oledExp.setCursor(1,1)
+        oledExp.write(latstr)
+        oledExp.setCursor(2,1)
+        oledExp.write(lonstr)
+        oledExp.setCursor(4,1)
+        oledExp.write(satstr)
+        oledExp.setCursor(5,1)
+        oledExp.write(timestr)
 
-    #with open('one_ogps.json') as f:
-    #    d = json.load(f)
-    
-    if (('signal' in d) and (not d['signal'])):
-        lat = 0.0
-        lon = 0.0
-        dly = 60
-    else:
-        lat = round(float(d['latitude']),3)
-        lon = round(float(d['longitude']),3)
-	dly = 10
+ 
+ 
+serialPort = serial.Serial(port, baudrate = 9600, timeout = 0.5)
+while True:
+    str = serialPort.readline()
+    parseGPS(str)
 
-    latstr = 'LAT: {:8.3f}'.format(lat)
-    lonstr = 'LON: {:8.3f}'.format(lon)
-
-    print(latstr)
-    print(lonstr)
-
-    oledExp.clear()
-    oledExp.setCursor(1,1)
-    oledExp.write(latstr)
-    oledExp.setCursor(3,1)
-    oledExp.write(lonstr)
-
-    time.sleep(dly)

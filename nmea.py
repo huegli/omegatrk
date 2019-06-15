@@ -2,6 +2,7 @@
 
 import serial
 import pynmea2
+import time
  
 port = "/dev/ttyACM0"
  
@@ -15,3 +16,4 @@ serialPort = serial.Serial(port, baudrate = 9600, timeout = 0.5)
 while True:
     str = serialPort.readline()
     parseGPS(str)
+#    time.sleep(10)
